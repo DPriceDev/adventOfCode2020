@@ -5,6 +5,7 @@
 .global printChar
 .global printInteger
 .global printLnInteger
+.global printNewLine
 
 # --------------------------------------------- #
 # print a string to the console

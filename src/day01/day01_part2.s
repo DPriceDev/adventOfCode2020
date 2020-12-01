@@ -1,20 +1,7 @@
 
 .global _main
 
-.extern openfile
-.extern closefile
-.extern writefile
-.extern exit
-.extern printString
-.extern printLnString
-.extern printLnString
-.extern printChar
-.extern printInteger
-.extern printLnInteger
-.extern stringToInt
-.extern stringLength
-
-# --------------------------------------------- #
+# ------------------------------------------------------------- #
 # Variables
 .data
 inputsFileName: .asciz          "input.txt"
@@ -31,6 +18,7 @@ foundMessage:   .asciz          "Found 2020 from: "
 andMessage:     .asciz          " and "
 multipleMessage:.asciz          "The multiple is: "
 
+# Local Variables
 .bss
 fileBuffer:     .lcomm          fbuffer, 2048
 lineBuffer:     .lcomm          lbuffer, 64
@@ -73,11 +61,8 @@ splitLoop:
                 cmp             byte ptr [rdx], 0               # if null terminator is not reached, split again
                 jne             splitLoop
 
-                jmp             checkLoop
-
 # ------------------------------------------------------------- #
-
-                # pop the stack when a number is finished being checked
+                jmp             checkLoop
 popStack:
                 pop             rax                             # remove from the stack the redundant value
 

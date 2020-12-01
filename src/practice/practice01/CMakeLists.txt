@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 
-add_executable(practice01 practice01.s ../../utils/print.s)
+add_executable(practice01 practice01.s)
+target_link_libraries(practice01 apollo)
 
 add_custom_command(
         TARGET practice01 POST_BUILD
