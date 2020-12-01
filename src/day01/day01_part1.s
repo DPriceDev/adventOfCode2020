@@ -9,7 +9,6 @@ fileDescriptor: .quad           4
 
 firstNumber:    .quad           0
 secondNumber:   .quad           0
-thirdNumber:    .quad           0
 multiple:       .quad           0
 count:          .quad           200
 
@@ -64,69 +63,44 @@ splitLoop:
 # ------------------------------------------------------------- #
                 jmp             checkLoop
 popStack:
-                pop             rax                             # remove from the stack the redundant value
-
+                pop             rax                             # remove redundant check
 checkLoop:
-                cmp             r9, 0                           # if no inputs left, finish
-                jle             failed
-
                 mov             rdx, r9                         # move the currently left input count to rdx
                 dec             r9                              # decrease the r9 counter for overall inputs
+
+                cmp             r9, 0                           # if no inputs left, finish
+                je              failed
+
                 mov             rdi, rsp                        # move the stack pointer into rdi
 
                 # loop checking each addition
 additionLoop:
                 dec             rdx                             # decrement the loop count
-                mov             r10, rdx                        # save the second loop count
-
                 cmp             rdx, 0                          # check if zero, if so, jump to check loop
-                jle             popStack
+                je              popStack
 
                 mov             rax, [rsp]                      # mov the value at the stack pointer to rax
                 add             rdi, 8                          # decrement the rdi pointer to get the next value
                 mov             rsi, [rdi]
                 add             rax, rsi                        # add the values at both pointers
 
-                mov             r11, rdi                        # update the second loop pointer
-
-                # Loop through the third set of numbers and check addition
-thirdAdditionLoop:
-                dec             r10                             # decrement the loop count
-                cmp             r10, 0                          # check if zero, if so, jump to check loop
-                jle             additionLoop
-
-                add             r11, 8                          # decrement the rdi pointer to get the next value
-                mov             r12, rax
-                mov             r13, [r11]
-                add             r12, r13                        # add the values at both pointers
-
-                cmp             r12, 2020                       # if they do not add to 2020, loop
-                jne             thirdAdditionLoop
+                cmp             rax, 2020                       # if they do not add to 2020, loop
+                jne             additionLoop
 
 # ------------------------------------------------------------- #
-
                 # found code
 found:
                 mov             [firstNumber + RIP], rsi        # save the winning numbers in the variables
                 mov             rax, [rsp]
                 mov             [secondNumber + RIP], rax
-                mov             [thirdNumber + RIP], r13
 
-                mov             rax, [secondNumber + RIP]       # multiply the three numbers together
+                mov             rax, [secondNumber + RIP]       # multiply found numbers
                 mov             rdi, [firstNumber + RIP]
-                mul             rdi
-                mov             rdi, [thirdNumber + RIP]
                 mul             rdi
                 mov             [multiple + RIP], rax
 
                 # Print found!
                 lea             rsi, [foundMessage + RIP]       # print found
-                call            printString
-
-                mov             rax, [firstNumber + RIP]       # print number
-                call            printInteger
-
-                lea             rsi, [andMessage + RIP]         # print and
                 call            printString
 
                 mov             rax, [secondNumber + RIP]       # print number
@@ -135,7 +109,7 @@ found:
                 lea             rsi, [andMessage + RIP]         # print and
                 call            printString
 
-                mov             rax, [thirdNumber + RIP]        # print other number
+                mov             rax, [firstNumber + RIP]        # print other number
                 call            printLnInteger
 
                 lea             rsi, [multipleMessage + RIP]    # print multiple message
@@ -154,5 +128,3 @@ failed:
 finished:
                 # Exit
                 call            exit
-
-

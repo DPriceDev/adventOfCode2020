@@ -1,4 +1,3 @@
-.include "methods.s"
 
 .global _main
 
@@ -73,7 +72,7 @@ _main:
                 call            stringToInt
                 call            printLnInteger
 
-                # convert a string to a negative integer todo: can't print negatives!
+                # convert a string to a negative integer
                 lea             rsi, [negativeString + RIP]
                 call            stringToInt
                 call            printLnInteger
