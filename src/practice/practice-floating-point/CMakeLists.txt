@@ -1,0 +1,4 @@
+cmake_minimum_required(VERSION 3.17)
+
+add_executable(practiceFloatingPoint practice_floating_point.s)
+target_link_libraries(practiceFloatingPoint apollo)
