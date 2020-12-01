@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 
-add_executable(practice01 practice01.s ../../utils/methods.s)
+add_executable(practice01 practice01.s ../../utils/print.s)
 
 add_custom_command(
         TARGET practice01 POST_BUILD

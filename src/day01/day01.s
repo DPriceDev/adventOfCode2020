@@ -1,4 +1,3 @@
-.include "methods.s"
 
 .global _main
 
