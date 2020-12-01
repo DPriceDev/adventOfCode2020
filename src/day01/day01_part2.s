@@ -55,28 +55,23 @@ _main:
                 mov             rdi, [fileDescriptor + RIP]     # file descriptor of the opened file
                 call            closefile
 
+# ------------------------------------------------------------- #
+
                 # split buffer into lines and convert to integer, then push to stack
                 lea             rdx, [fileBuffer + RIP]         # buffer to split
                 lea             rdi, [lineBuffer + RIP]         # line output buffer
-
-                # Seperate the input string into integers
 splitLoop:
                 call            splitString
 
-                lea             rsi, [lineBuffer + RIP]
-                call            stringToInt
-                push            rax
+                lea             rsi, [lineBuffer + RIP]         # move output line to rsi
+                call            stringToInt                     # convert line to an Integer
+                push            rax                             # push the integer onto the stack
 
-#                call            printLnInteger
-
-                xor             rax, rax
-
-                inc             r9
+                inc             r9                              # increment the file count
                 lea             rdi, [lineBuffer + RIP]         # line output buffer
 
-                # update rdx to rdx + rsi and resume
-                cmp             byte ptr [rdx], 0
-                jne             splitLoop                     # setup next line for splitting
+                cmp             byte ptr [rdx], 0               # if null terminator is not reached, split again
+                jne             splitLoop
 
                 jmp             checkLoop
 
@@ -84,17 +79,13 @@ splitLoop:
 
                 # pop the stack when a number is finished being checked
 popStack:
-                pop             rax
-                pop             rax
-                pop             rax
+                pop             rax                             # remove from the stack the redundant value
 
-                # decrease the counter
 checkLoop:
-                mov             rdx, r9                         # move the currently left input count to rdx
-
-                cmp             r9, 2                           # if no inputs left, finish
+                cmp             r9, 0                           # if no inputs left, finish
                 jle             failed
 
+                mov             rdx, r9                         # move the currently left input count to rdx
                 dec             r9                              # decrease the r9 counter for overall inputs
                 mov             rdi, rsp                        # move the stack pointer into rdi
 
@@ -107,12 +98,11 @@ additionLoop:
                 jle             popStack
 
                 mov             rax, [rsp]                      # mov the value at the stack pointer to rax
-                sub             rdi, 8                          # decrement the rdi pointer to get the next value
+                add             rdi, 8                          # decrement the rdi pointer to get the next value
                 mov             rsi, [rdi]
                 add             rax, rsi                        # add the values at both pointers
 
-                mov             r11, rsp                        # update the second loop pointer
-                sub             r11, 8                          # decrement by one to remove duplicate
+                mov             r11, rdi                        # update the second loop pointer
 
                 # Loop through the third set of numbers and check addition
 thirdAdditionLoop:
@@ -120,7 +110,7 @@ thirdAdditionLoop:
                 cmp             r10, 0                          # check if zero, if so, jump to check loop
                 jle             additionLoop
 
-                sub             r11, 8                          # decrement the rdi pointer to get the next value
+                add             r11, 8                          # decrement the rdi pointer to get the next value
                 mov             r12, rax
                 mov             r13, [r11]
                 add             r12, r13                        # add the values at both pointers
