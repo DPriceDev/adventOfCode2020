@@ -2,8 +2,10 @@
 .global splitString
 .global stringToInt
 .global stringLength
+.global findCharacter
+.global findCharacterInRange
 
-# --------------------------------------------- #
+# ------------------------------------------------------------- #
 # Get String Length
 #  todo: investigate "repne scasb"
 # mov           rsi, "string buffer"
@@ -21,10 +23,7 @@ stringLength_complete:
                 sub             rax, rsi
                 ret
 
-# --------------------------------------------- #
-# todo: move to method as read line, return either address pointer if more, or null if complete? provide line return buffer?
-# todo: on each check, add char into string buffer from beginning and when new line is found, add a null terminator
-# todo: need to consider this also for last line
+# ------------------------------------------------------------- #
 # Split a string by a delimiter
 # lea           rdx, "input string buffer"
 # lea           rdi, "output line buffer"
@@ -58,7 +57,7 @@ splitString_zero:
 
                 ret
 
-# --------------------------------------------- #
+# ------------------------------------------------------------- #
 # Convert String to Int
 # lea           rsi, "string buffer"
 # return int in rax
@@ -118,4 +117,40 @@ stringToInt_finished:
                 pop             r10
                 pop             r9
 
+                ret
+
+# ------------------------------------------------------------- #
+# Find First Occurrance of a Character (in a range) in String
+#               lea             rdi, buffer - String buffer to check
+#               mov             rax, 'a' - lower char limit
+#               mov             rsi, 'z' - upper char limit
+# return character or terminator in pointer returned in rdi
+findCharacterInRange_nextChar:
+                inc             rdi                             # increment the input buffer
+findCharacterInRange:
+                cmp             byte ptr [rdi], 0               # check against lower char range
+                jl              findCharacterInRange_terminator
+
+                cmp             byte ptr [rdi], al              # check against lower char range
+                jl              findCharacterInRange_nextChar
+
+                cmp             byte ptr [rdi], sil             # check against upper char range
+                jg              findCharacterInRange_nextChar
+findCharacterInRange_terminator:
+                ret
+
+# ------------------------------------------------------------- #
+# Find First Occurrance of a Character in String
+#               lea             rdi, buffer - String buffer to check
+#               mov             rax, 'a' - character to check for
+# return character or terminator in pointer returned in rdi
+findCharacter_nextChar:
+                inc             rdi                             # increment the input buffer
+findCharacter:
+                cmp             byte ptr [rdi], 0               # check against lower char range
+                jl              findCharacter_terminator
+
+                cmp             byte ptr [rdi], al              # check against lower char range
+                jl              findCharacter_nextChar
+findCharacter_terminator:
                 ret

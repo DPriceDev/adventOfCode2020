@@ -13,7 +13,6 @@ fileBuffer:     .lcomm          fbuffer, 24000
 lineBuffer:     .lcomm          lbuffer, 64
 numberBuffer:   .lcomm          nbuffer, 12
 
-
 # ------------------------------------------------------------- #
 # Main
 .text
@@ -24,10 +23,10 @@ _main:
                 mov             [fileDescriptor + RIP], rax     # save returned file descriptor
 
                 # read the file to the buffer
-                mov             rax, [syscall_read + RIP]       # invoke SYS_READ (kernel opcode 3)
-                mov             rdi, [fileDescriptor + RIP]     # move the opened file descriptor into EBX
-                lea             rsi, [fileBuffer + RIP]         # move the memory address of our file contents variable into ecx
-                mov             rdx, 24000                      # number of bytes to read - one for each letter of the file contents
+                mov             rax, [syscall_read + RIP]       # set sys call as read
+                mov             rdi, [fileDescriptor + RIP]     # file descriptor
+                lea             rsi, [fileBuffer + RIP]         # pointer to file buffer
+                mov             rdx, 24000                      # number of bytes to read
                 syscall
 
                 # Close a file
@@ -60,7 +59,7 @@ splitLoop:
                 call            exit
 
 # ------------------------------------------------------------- #
-
+# Check the password is correct
 checkPassword:
 
                 # get first number
@@ -72,13 +71,13 @@ checkPassword:
                 mov             r11, rax                        # save number into register r11
 
                 # find character
-                mov             rax, 65
-                mov             rsi, 122
-                call            findCharacter                   # find character to check for
+                mov             rax, 'a'
+                mov             rsi, 'z'
+                call            findCharacterInRange            # find character to check for
                 mov             r12, [rdi]                      # save character into r12
 
                 # search character
-                call            findCharacter                   # find first character of the password
+                call            findCharacterInRange            # find first character of the password
                 call            countCharacters                 # count number of characters in string
 
                 cmp             rax, r10                        # check if count is less than lower limit
@@ -96,9 +95,9 @@ checkPassword_notViable:
 findNumber:
                 lea             rdx, [numberBuffer + RIP]       # set rdx to be the number buffer
 
-                mov             rax, 48
-                mov             rsi, 57
-                call            findCharacter                   # find the first occuring number in the string
+                mov             rax, '0'
+                mov             rsi, '9'
+                call            findCharacterInRange            # find the first occuring number in the string
 
 findNumber_nextChar:
                 mov             rsi, [rdi]                      # move value from pointer to pointer
@@ -107,10 +106,10 @@ findNumber_nextChar:
                 inc             rdi                             # increment string buffer
                 inc             rdx                             # increment number buffer
 
-                cmp             byte ptr [rdi], 48              # if char is less than 0
+                cmp             byte ptr [rdi], '0'             # if char is less than 0
                 jl              findNumber_finished
 
-                cmp             byte ptr [rdi], 57              # if char is greater than 9
+                cmp             byte ptr [rdi], '9'              # if char is greater than 9
                 jg              findNumber_finished
 
                 jmp             findNumber_nextChar             # check the next char
@@ -123,18 +122,7 @@ findNumber_finished:
                 ret
 
 # ------------------------------------------------------------- #
-findCharacter_nextChar:
-                inc             rdi                             # increment the input buffer
-findCharacter:
-                cmp             byte ptr [rdi], al              # check against upper char range
-                jl              findCharacter_nextChar
-
-                cmp             byte ptr [rdi], sil             # check against lower char range
-                jg              findCharacter_nextChar
-
-                ret
-
-# ------------------------------------------------------------- #
+# count the number of occurences in a given string
 countCharacters:
                 xor             rax, rax                        # clear counter
 countCharacters_nextChar:
