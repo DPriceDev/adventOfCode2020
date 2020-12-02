@@ -81,10 +81,10 @@ checkPassword:
                 call            findCharacter                   # find first character of the password
                 call            countCharacters                 # count number of characters in string
 
-                cmp             r13, r10                        # check if count is less than lower limit
+                cmp             rax, r10                        # check if count is less than lower limit
                 jl              checkPassword_notViable
 
-                cmp             r13, r11                        # check if count is higher than upper limit
+                cmp             rax, r11                        # check if count is higher than upper limit
                 jg              checkPassword_notViable
 
                 inc             r9                              # increment the file count if in range
@@ -136,7 +136,7 @@ findCharacter:
 
 # ------------------------------------------------------------- #
 countCharacters:
-                xor             r13, r13                        # clear counter
+                xor             rax, rax                        # clear counter
 countCharacters_nextChar:
                 inc             rdi
 countCharacters_start:
@@ -146,7 +146,7 @@ countCharacters_start:
                 cmp             byte ptr [rdi], r12b            # compare rdi char to the char in r12
                 jne             countCharacters_nextChar
 
-                inc             r13                             # increment if character is found
+                inc             rax                             # increment if character is found
                 jmp             countCharacters_nextChar
 countCharacters_finished:
                 ret

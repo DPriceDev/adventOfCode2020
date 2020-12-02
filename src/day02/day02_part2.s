@@ -78,16 +78,11 @@ checkPassword:
                 inc             rdi                             # Skip over character to check for
                 call            findCharacter                   # find first character of the password
 
-                # search character
-                xor             r13, r13
-                xor             r14, r14
+                # check characters in the password are correct
                 call            comparePassword
 
-                cmp             r13, r10                        # check if count is less than lower limit
-                jl              checkPassword_notViable
-
-                cmp             r13, r11                        # check if count is higher than upper limit
-                jg              checkPassword_notViable
+                cmp             rax, 0                          # check if count is less than lower limit
+                je              checkPassword_notViable
 
                 inc             r9                              # increment the file count if in range
 checkPassword_notViable:
@@ -138,7 +133,7 @@ findCharacter:
 
 # ------------------------------------------------------------- #
 comparePassword:
-                xor             r13, r13                        # clear r13 to a null terminator
+                xor             rax, rax                        # clear r13 to a null terminator
 
                 cmp             byte ptr [rdi + r10 - 1], r12b  # check if char at position r10 - 1 is equal
                 jne             comparePassword_secondCheck
@@ -146,12 +141,12 @@ comparePassword:
                 cmp             byte ptr [rdi + r11 - 1], r12b  # check if char at position r11 - 1 is equal
                 je              comparePassword_finish
 
-                mov             r13, r11                        # if the first is equal and not the other, set true
+                mov             rax, 1                          # if the first is equal and not the other, set true
                 jmp             comparePassword_finish
 
 comparePassword_secondCheck:
                 cmp             byte ptr [rdi + r11 - 1], r12b  # check if the second number is equal
                 jne             comparePassword_finish
-                mov             r13, r11                        # if the first is equal and not the other, set true
+                mov             rax, 1                          # if the first is equal and not the other, set true
 comparePassword_finish:
                 ret
