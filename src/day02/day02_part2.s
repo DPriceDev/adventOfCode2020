@@ -13,7 +13,6 @@ fileBuffer:     .lcomm          fbuffer, 24000
 lineBuffer:     .lcomm          lbuffer, 64
 numberBuffer:   .lcomm          nbuffer, 12
 
-
 # ------------------------------------------------------------- #
 # Main
 .text
@@ -38,163 +37,121 @@ _main:
 
                 # split buffer into lines and convert to integer, then push to stack
                 lea             rdx, [fileBuffer + RIP]         # buffer to split
-                lea             rdi, [lineBuffer + RIP]         # line output buffer
 splitLoop:
+                lea             rdi, [lineBuffer + RIP]         # line output buffer
                 call            splitString
 
-                push            rdx
-                lea             rdi, [lineBuffer + RIP]         # line output buffer
+                # Check a password
+                push            rdx                             # Save the input file buffer
+                lea             rdi, [lineBuffer + RIP]         # mov line buffer to rdi to check password
                 call            checkPassword
+                pop             rdx                             # restore input file buffer
 
-                lea             rdi, [lineBuffer + RIP]         # line output buffer
-                pop             rdx
-
+                # Split again if buffer not finished
                 cmp             byte ptr [rdx], 0               # if null terminator is not reached, split again
                 jne             splitLoop
 
-                mov             rax, r9
+                # Print Number of valid passwords
+                mov             rax, r9                         # move the count to rax and print result
                 call            printInteger
 
                 # Exit
                 call            exit
 
 # ------------------------------------------------------------- #
-
 checkPassword:
                 # get first number
-                call            findNumber
-                mov             r10, rax
+                call            findNumber                      # find first number
+                mov             r10, rax                        # save number into register r10
 
                 # get next number
-                call            findNumber
-                mov             r11, rax
+                call            findNumber                      # find second number
+                mov             r11, rax                        # save number into register r11
 
                 # find character
-                call            findCharacter
-                mov             r12, [rdi]
+                mov             rax, 65
+                mov             rsi, 122
+                call            findCharacter                   # find character to check for
+                mov             r12, [rdi]                      # save character into r12
 
                 # proceed to beginning of the password string
-                inc             rdi
-                call            findCharacter
-                #dec             rdi
+                inc             rdi                             # Skip over character to check for
+                call            findCharacter                   # find first character of the password
 
                 # search character
                 xor             r13, r13
                 xor             r14, r14
                 call            comparePassword
 
-                cmp             r13, r10
-                jl              notViable
+                cmp             r13, r10                        # check if count is less than lower limit
+                jl              checkPassword_notViable
 
-                cmp             r13, r11
-                jg              notViable
+                cmp             r13, r11                        # check if count is higher than upper limit
+                jg              checkPassword_notViable
 
-                inc             r9                              # increment the file count
-
-notViable:
+                inc             r9                              # increment the file count if in range
+checkPassword_notViable:
                 ret
 
 # ------------------------------------------------------------- #
-
+# Extract a number from a string
 findNumber:
-                lea             rdx, [numberBuffer + RIP]       # set number buffer
-                jmp             startLookingNum
-nextNum:
-                inc             rdi                             # increment the input buffer
-startLookingNum:
-                cmp             byte ptr [rdi], 48
-                jl              nextNum
+                lea             rdx, [numberBuffer + RIP]       # set rdx to be the number buffer
 
-                cmp             byte ptr [rdi], 57
-                jg              nextNum
-saveNumber:
-                mov             rsi, [rdi]
+                mov             rax, 48
+                mov             rsi, 57
+                call            findCharacter                   # find the first occuring number in the string
+
+findNumber_nextChar:
+                mov             rsi, [rdi]                      # move value from pointer to pointer
                 mov             [rdx], rsi
 
-                inc             rdi
-                inc             rdx
+                inc             rdi                             # increment string buffer
+                inc             rdx                             # increment number buffer
 
-                cmp             byte ptr [rdi], 48
-                jl              found
+                cmp             byte ptr [rdi], 48              # if char is less than 0
+                jl              findNumber_finished
 
-                cmp             byte ptr [rdi], 57
-                jg              found
+                cmp             byte ptr [rdi], 57              # if char is greater than 9
+                jg              findNumber_finished
 
-                jmp             saveNumber
-found:
-                mov             byte ptr [rdx], 0
+                jmp             findNumber_nextChar             # check the next char
 
-
-                lea             rsi, [numberBuffer + RIP]
-                call            stringToInt
+findNumber_finished:
+                mov             byte ptr [rdx], 0               # set last char as a null terminator
+                lea             rsi, [numberBuffer + RIP]       # set rsi as the number buffer for stringToInt
+                call            stringToInt                     # convert the string to an int
 
                 ret
 
 # ------------------------------------------------------------- #
-
-findCharacter:
-                jmp             startLookingChar
-nextChar:
+findCharacter_nextChar:
                 inc             rdi                             # increment the input buffer
-startLookingChar:
-                cmp             byte ptr [rdi], 65
-                jl              nextChar
+findCharacter:
+                cmp             byte ptr [rdi], al              # check against upper char range
+                jl              findCharacter_nextChar
 
-                cmp             byte ptr [rdi], 122
-                jg              nextChar
+                cmp             byte ptr [rdi], sil             # check against lower char range
+                jg              findCharacter_nextChar
 
                 ret
 
 # ------------------------------------------------------------- #
-
-countCharacters_loop:
-                inc             rdi
-                inc             r14
-countCharacters:
-
-                # finish if string is ended
-                cmp             byte ptr [rdi], 0
-                je              finished
-
-                # check the lowest b of rax against the saved byte r12
-                mov             rax, r12
-                cmp             byte ptr [rdi], al
-                jne             countCharacters_loop
-
-                inc             r13
-                jmp             countCharacters_loop
-finished:
-                ret
-
-# ------------------------------------------------------------- #
-
 comparePassword:
-                # r10
-                # r11
-                # char r12
-                # rdi is array
+                xor             r13, r13                        # clear r13 to a null terminator
 
-                # finish if string is ended
+                cmp             byte ptr [rdi + r10 - 1], r12b  # check if char at position r10 - 1 is equal
+                jne             comparePassword_secondCheck
 
-                mov             rax, r12
+                cmp             byte ptr [rdi + r11 - 1], r12b  # check if char at position r11 - 1 is equal
+                je              comparePassword_finish
 
-                cmp             byte ptr [rdi + r10 - 1], al
-                jne secondCheck
+                mov             r13, r11                        # if the first is equal and not the other, set true
+                jmp             comparePassword_finish
 
-                cmp             byte ptr [rdi + r11 - 1], al
-                je incorrect
-
-                mov             r13, r11
-                jmp             correct
-
-secondCheck:
-                cmp             byte ptr [rdi + r11 - 1], al
-                jne incorrect
-
-                mov             r13, r11
-                jmp             correct
-
-incorrect:
-                mov             r13, 0
-correct:
+comparePassword_secondCheck:
+                cmp             byte ptr [rdi + r11 - 1], r12b  # check if the second number is equal
+                jne             comparePassword_finish
+                mov             r13, r11                        # if the first is equal and not the other, set true
+comparePassword_finish:
                 ret

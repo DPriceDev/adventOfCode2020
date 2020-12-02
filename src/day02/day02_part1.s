@@ -38,21 +38,22 @@ _main:
 
                 # split buffer into lines and convert to integer, then push to stack
                 lea             rdx, [fileBuffer + RIP]         # buffer to split
-                lea             rdi, [lineBuffer + RIP]         # line output buffer
 splitLoop:
+                lea             rdi, [lineBuffer + RIP]         # line output buffer
                 call            splitString
 
-                push            rdx
-                lea             rdi, [lineBuffer + RIP]         # line output buffer
+                # Check a password
+                push            rdx                             # Save the input file buffer
+                lea             rdi, [lineBuffer + RIP]         # mov line buffer to rdi to check password
                 call            checkPassword
+                pop             rdx                             # restore input file buffer
 
-                lea             rdi, [lineBuffer + RIP]         # line output buffer
-                pop             rdx
-
+                # Split again if buffer not finished
                 cmp             byte ptr [rdx], 0               # if null terminator is not reached, split again
                 jne             splitLoop
 
-                mov             rax, r9
+                # Print Number of valid passwords
+                mov             rax, r9                         # move the count to rax and print result
                 call            printInteger
 
                 # Exit
@@ -61,97 +62,91 @@ splitLoop:
 # ------------------------------------------------------------- #
 
 checkPassword:
+
                 # get first number
-                call            findNumber
-                mov             r10, rax
+                call            findNumber                      # find first number
+                mov             r10, rax                        # save number into register r10
 
                 # get next number
-                call            findNumber
-                mov             r11, rax
+                call            findNumber                      # find second number
+                mov             r11, rax                        # save number into register r11
 
                 # find character
-                call            findCharacter
-                mov             r12, [rdi]
+                mov             rax, 65
+                mov             rsi, 122
+                call            findCharacter                   # find character to check for
+                mov             r12, [rdi]                      # save character into r12
 
                 # search character
-                xor             r13, r13
-                call            countCharacters
+                call            findCharacter                   # find first character of the password
+                call            countCharacters                 # count number of characters in string
 
-                cmp             r13, r10
-                jl              notViable
+                cmp             r13, r10                        # check if count is less than lower limit
+                jl              checkPassword_notViable
 
-                cmp             r13, r11
-                jg              notViable
+                cmp             r13, r11                        # check if count is higher than upper limit
+                jg              checkPassword_notViable
 
-                inc             r9                              # increment the file count
-
-notViable:
+                inc             r9                              # increment the file count if in range
+checkPassword_notViable:
                 ret
 
 # ------------------------------------------------------------- #
-
+# Extract a number from a string
 findNumber:
-                lea             rdx, [numberBuffer + RIP]       # set number buffer
-                jmp             startLookingNum
-nextNum:
-                inc             rdi                             # increment the input buffer
-startLookingNum:
-                cmp             byte ptr [rdi], 48
-                jl              nextNum
+                lea             rdx, [numberBuffer + RIP]       # set rdx to be the number buffer
 
-                cmp             byte ptr [rdi], 57
-                jg              nextNum
-saveNumber:
-                mov             rsi, [rdi]
+                mov             rax, 48
+                mov             rsi, 57
+                call            findCharacter                   # find the first occuring number in the string
+
+findNumber_nextChar:
+                mov             rsi, [rdi]                      # move value from pointer to pointer
                 mov             [rdx], rsi
 
-                inc             rdi
-                inc             rdx
+                inc             rdi                             # increment string buffer
+                inc             rdx                             # increment number buffer
 
-                cmp             byte ptr [rdi], 48
-                jl              found
+                cmp             byte ptr [rdi], 48              # if char is less than 0
+                jl              findNumber_finished
 
-                cmp             byte ptr [rdi], 57
-                jg              found
+                cmp             byte ptr [rdi], 57              # if char is greater than 9
+                jg              findNumber_finished
 
-                jmp             saveNumber
-found:
-                mov             byte ptr [rdx], 0
+                jmp             findNumber_nextChar             # check the next char
 
-
-                lea             rsi, [numberBuffer + RIP]
-                call            stringToInt
+findNumber_finished:
+                mov             byte ptr [rdx], 0               # set last char as a null terminator
+                lea             rsi, [numberBuffer + RIP]       # set rsi as the number buffer for stringToInt
+                call            stringToInt                     # convert the string to an int
 
                 ret
 
 # ------------------------------------------------------------- #
-
-findCharacter:
-                jmp             startLookingChar
-nextChar:
+findCharacter_nextChar:
                 inc             rdi                             # increment the input buffer
-startLookingChar:
-                cmp             byte ptr [rdi], 65
-                jl              nextChar
+findCharacter:
+                cmp             byte ptr [rdi], al              # check against upper char range
+                jl              findCharacter_nextChar
 
-                cmp             byte ptr [rdi], 122
-                jg              nextChar
+                cmp             byte ptr [rdi], sil             # check against lower char range
+                jg              findCharacter_nextChar
 
                 ret
 
 # ------------------------------------------------------------- #
-
 countCharacters:
+                xor             r13, r13                        # clear counter
+countCharacters_nextChar:
                 inc             rdi
+countCharacters_start:
+                cmp             byte ptr [rdi], 0               # check if end of string
+                je              countCharacters_finished
 
-                cmp             byte ptr [rdi], 0
-                je              finished
+                cmp             byte ptr [rdi], r12b            # compare rdi char to the char in r12
+                jne             countCharacters_nextChar
 
-                mov             rax, r12
-                cmp             byte ptr [rdi], al
-                jne             countCharacters
-
-                inc             r13
-                jmp             countCharacters
-finished:
+                inc             r13                             # increment if character is found
+                jmp             countCharacters_nextChar
+countCharacters_finished:
                 ret
