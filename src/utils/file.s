@@ -36,3 +36,13 @@ writefile:
                 mov             rax, [syscall_write + RIP]
                 syscall
                 ret
+
+# --------------------------------------------- #
+# Get the size of a file
+# mov           rdi, "file descriptor"
+# lea           rsi, "pointer to buffer"
+# mov           rdx, "length of buffer to write"
+writefile:
+                mov             rax, [syscall_write + RIP]
+                syscall
+                ret
