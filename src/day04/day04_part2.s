@@ -11,10 +11,17 @@ fileSize:       .quad           24000
 groupToken:     .asciz          "\n\n"
 passportTokens: .asciz          "byr:", "iyr:", "eyr:", "hgt:", "hcl:", "ecl:", "pid:"
 
+checkFunctions: .quad           checkValidYear, checkValidYear, checkValidYear, checkValidHeight, checkValidHairColour, checkValidEyeColour, checkValidPassportId
+upperDateLimit: .quad           2002, 2020, 2030
+lowerDateLimit: .quad           1920, 2010, 2020
+
+validEyeColour: .asciz          "amb", "blu", "brn", "gry", "grn", "hzl", "oth"
+
 # Local Variables
 .bss
 fileBuffer:     .lcomm          fbuffer, 24000
 lineBuffer:     .lcomm          lbuffer, 248
+convertBuffer:  .lcomm          cbuffer, 24
 
 # ------------------------------------------------------------- #
 # Main
@@ -46,11 +53,14 @@ splitLoop:
 
                 xor             r10, r10
                 lea             r11, [passportTokens + RIP]
-                sub             r11, 5
+                lea             r12, [checkFunctions + RIP]
+                jmp             passportCheck
+
 passportCheckLoop:
                 inc             r10
                 add             r11, 5
-
+                add             r12, 8
+passportCheck:
                 # scan across the output buffer to find the string token "cid:"
                 lea             rdi, [lineBuffer + RIP]         # line output buffer
                 mov             rsi, r11
@@ -60,9 +70,17 @@ passportCheckLoop:
                 cmp             byte ptr [rdi], 0
                 je              notFound
 
-                cmp             r10, 7
+                # check the token and value is correct
+                call            [r12]
+
+                cmp             rax, 0
+                je              notFound
+
+                # have all checks completed
+                cmp             r10, 6
                 jl              passportCheckLoop
 
+                # valid completed all checks
                 inc             r9
 notFound:
                 # check for terminator, if exists,
@@ -76,3 +94,110 @@ finished:
 
                 # Exit
                 call            exit
+
+# ------------------------------------------------------------- #
+checkValidYear:
+                push            rdx
+                push            rdi
+
+                # todo: extract to array lib?
+                xor             rcx, rcx
+                lea             rsi, [convertBuffer + RIP]
+checkValidYear_copyLoop:
+                mov             rbx, [rdi + rcx]
+                mov             byte ptr [rsi], bl
+                inc             rcx
+                inc             rsi
+                cmp             rcx, 4
+                jl              checkValidYear_copyLoop
+
+                mov             byte ptr [rsi], 0
+
+                # convert these to an int
+                lea             rsi, [convertBuffer + RIP]
+                call            stringToInt
+
+                # save to r13 to free rax for boolean flag return
+                mov             r13, rax
+                xor             rax, rax
+
+                # compare to lower limit
+                shl             r10, 3
+                lea             rbx, [lowerDateLimit + RIP]
+                add             rbx, r10
+                cmp             r13d, dword ptr [rbx]
+                jl              checkValidYear_invalid
+
+                # compare to upper limit
+                lea             rbx, [upperDateLimit + RIP]
+                add             rbx, r10
+                cmp             r13d, dword ptr [rbx]
+                jg              checkValidYear_invalid
+
+                inc             rax
+checkValidYear_invalid:
+                shr             r10, 3
+                pop             rdi
+                pop             rdx
+                ret
+
+# ------------------------------------------------------------- #
+checkValidHeight:
+                xor             rax, rax
+
+                inc             rax
+
+                ret
+
+# ------------------------------------------------------------- #
+checkValidHairColour:
+                xor             rax, rax
+
+                inc             rax
+
+                ret
+
+# ------------------------------------------------------------- #
+checkValidEyeColour:
+                push            rdi
+                xor             rax, rax
+
+checkValidEyeColour_loop:
+
+
+#                call             splitString
+
+
+
+                inc             rax
+checkValidEyeColour_invalid:
+                pop             rdi
+                ret
+
+# ------------------------------------------------------------- #
+checkValidPassportId:
+                push            rdi
+                xor             rax, rax
+                xor             rbx, rbx
+
+                cmp             byte ptr [rdi], '0'
+                jne             checkValidPassportId_invalid
+
+checkValidPassportId_loop:
+                # check to see it is a number
+                cmp             byte ptr [rdi], '0'
+                jl              checkValidPassportId_invalid
+
+                cmp             byte ptr [rdi], '9'
+                jg              checkValidPassportId_invalid
+                inc             rbx
+
+                # check to see it is greater than 0
+                cmp             rbx, 8
+                jl              checkValidPassportId_loop
+
+                inc             rdi
+                inc             rax
+checkValidPassportId_invalid:
+                pop             rdi
+                ret

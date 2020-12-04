@@ -29,6 +29,7 @@ stringLength_complete:
 # Split a string by a delimiter
 # lea           rdx, "input string buffer"
 # lea           rdi, "output line buffer"
+# mov           rcx, delimiter i.e. ' '
 # return        output line or 0 for no more lines into rdi
 # return        output last position in the input buffer
 splitString:
@@ -46,7 +47,7 @@ splitString_inputs:
                 cmp             byte ptr [rsi], 0               # end splitting if null char encountered
                 je              splitString_zero
 
-                cmp             byte ptr [rsi], 10              # if not a next line, loop
+                cmp             byte ptr [rsi], cl              # if not a next line, loop
                 jne             splitString_increment
 splitString_zero:
                 mov             byte ptr [rdi], 0
