@@ -150,7 +150,7 @@ checkValidHeight:
                 ret
 
 # ------------------------------------------------------------- #
-checkValidHairColour:
+checkValidEyeColour:
                 xor             rax, rax
 
                 inc             rax
@@ -158,19 +158,39 @@ checkValidHairColour:
                 ret
 
 # ------------------------------------------------------------- #
-checkValidEyeColour:
+checkValidHairColour:
                 push            rdi
                 xor             rax, rax
+                xor             rbx, rbx
 
-checkValidEyeColour_loop:
+                cmp             byte ptr [rdi], '#'
+                jne             checkValidHairColour_invalid
+                inc             rdi
 
+checkValidHairColour_loop:
+                # check to see it is a number
+                cmp             byte ptr [rdi], '0'
+                jl              checkValidHairColour_invalid
 
-#                call             splitString
+                cmp             byte ptr [rdi], '9'
+                jle             checkValidHairColour_validChar
 
+                cmp             byte ptr [rdi], 'a'
+                jl              checkValidHairColour_invalid
 
+                cmp             byte ptr [rdi], 'z'
+                jg              checkValidHairColour_invalid
+
+checkValidHairColour_validChar:
+                inc             rbx
+                inc             rdi
+
+                # check to see it is greater than 0
+                cmp             rbx, 6
+                jl              checkValidHairColour_loop
 
                 inc             rax
-checkValidEyeColour_invalid:
+checkValidHairColour_invalid:
                 pop             rdi
                 ret
 
@@ -182,6 +202,7 @@ checkValidPassportId:
 
                 cmp             byte ptr [rdi], '0'
                 jne             checkValidPassportId_invalid
+                inc             rdi
 
 checkValidPassportId_loop:
                 # check to see it is a number
@@ -191,12 +212,12 @@ checkValidPassportId_loop:
                 cmp             byte ptr [rdi], '9'
                 jg              checkValidPassportId_invalid
                 inc             rbx
+                inc             rdi
 
                 # check to see it is greater than 0
                 cmp             rbx, 8
                 jl              checkValidPassportId_loop
 
-                inc             rdi
                 inc             rax
 checkValidPassportId_invalid:
                 pop             rdi
