@@ -71,7 +71,15 @@ passportCheck:
                 je              notFound
 
                 # check the token and value is correct
+                push            rdi
+                push            rdx
+                push            r10
+                push            r12
                 call            [r12]
+                pop             r12
+                pop             r10
+                pop             rdx
+                pop             rdi
 
                 cmp             rax, 0
                 je              notFound
@@ -87,7 +95,6 @@ notFound:
                 cmp             byte ptr [rdx], 0
                 jne             splitLoop
 finished:
-
                 # print count
                 mov             rax, r9
                 call            printInteger
@@ -97,9 +104,6 @@ finished:
 
 # ------------------------------------------------------------- #
 checkValidYear:
-                push            rdx
-                push            rdi
-
                 # todo: extract to array lib?
                 xor             rcx, rcx
                 lea             rsi, [convertBuffer + RIP]
@@ -136,30 +140,108 @@ checkValidYear_copyLoop:
 
                 inc             rax
 checkValidYear_invalid:
-                shr             r10, 3
-                pop             rdi
-                pop             rdx
                 ret
 
 # ------------------------------------------------------------- #
 checkValidHeight:
                 xor             rax, rax
 
-                inc             rax
+                mov             rbx, rdi
+                lea             rcx, [convertBuffer + RIP]
+checkValidHeight_loop:
+                mov             r10, [rbx]
+                mov             byte ptr [rcx], r10b
 
+                cmp             byte ptr [rcx], 'i'
+                je              checkValidHeight_inch
+
+                cmp             byte ptr [rcx], 'c'
+                je              checkValidHeight_cm
+
+                cmp             byte ptr [rcx], '0'
+                jl              checkValidHeight_invalid
+
+                cmp             byte ptr [rcx], '9'
+                jg              checkValidHeight_invalid
+
+                inc             rbx
+                inc             rcx
+                jmp             checkValidHeight_loop
+
+checkValidHeight_cm:
+                mov             byte ptr [rcx], 0
+                lea             rsi, [convertBuffer + RIP]
+                call            stringToInt
+
+                # compare to upper limit
+                cmp             rax, 193
+                jg              checkValidHeight_invalid
+
+                # compare to lower limit
+                cmp             rax, 150
+                jl              checkValidHeight_invalid
+                jmp             checkValidHeight_valid
+
+checkValidHeight_inch:
+                mov             byte ptr [rcx], 0
+
+                lea             rsi, [convertBuffer + RIP]
+                call            stringToInt
+
+                # compare to upper limit
+                cmp             rax, 76
+                jg              checkValidHeight_invalid
+
+                # compare to lower limit
+                cmp             rax, 59
+                jl              checkValidHeight_invalid
+
+checkValidHeight_valid:
+                mov             rax, 1
+                ret
+checkValidHeight_invalid:
+                xor             rax, rax
                 ret
 
 # ------------------------------------------------------------- #
 checkValidEyeColour:
                 xor             rax, rax
+                xor             rbx, rbx
+
+                lea             rdx, [validEyeColour + RIP]
+                jmp             checkValidEyeColour_start
+checkValidEyeColour_loop:
+                inc             rbx
+                lea             rdx, [validEyeColour + RIP]
+                shl             rbx, 2
+                add             rdx, rbx
+                shr             rbx, 2
+checkValidEyeColour_start:
+                # check array finished
+                cmp             rbx, 7
+                je              checkValidEyeColour_invalid
+
+                # check 1st chars match
+                mov             rcx, [rdx]
+                cmp             byte ptr [rdi], cl
+                jne             checkValidEyeColour_loop
+
+                # check 2nd chars match
+                mov             rcx, [rdx + 1]
+                cmp             byte ptr [rdi + 1], cl
+                jne             checkValidEyeColour_loop
+
+                # check 3rd chars match
+                mov             rcx, [rdx + 2]
+                cmp             byte ptr [rdi + 2], cl
+                jne             checkValidEyeColour_loop
 
                 inc             rax
-
+checkValidEyeColour_invalid:
                 ret
 
 # ------------------------------------------------------------- #
 checkValidHairColour:
-                push            rdi
                 xor             rax, rax
                 xor             rbx, rbx
 
@@ -191,18 +273,12 @@ checkValidHairColour_validChar:
 
                 inc             rax
 checkValidHairColour_invalid:
-                pop             rdi
                 ret
 
 # ------------------------------------------------------------- #
 checkValidPassportId:
-                push            rdi
                 xor             rax, rax
                 xor             rbx, rbx
-
-                cmp             byte ptr [rdi], '0'
-                jne             checkValidPassportId_invalid
-                inc             rdi
 
 checkValidPassportId_loop:
                 # check to see it is a number
@@ -214,11 +290,18 @@ checkValidPassportId_loop:
                 inc             rbx
                 inc             rdi
 
-                # check to see it is greater than 0
-                cmp             rbx, 8
+                cmp             rbx, 9
                 jl              checkValidPassportId_loop
 
+                cmp             byte ptr [rdi], '0'
+                jl              checkValidPassportId_valid
+
+                cmp             byte ptr [rdi], '9'
+                jg              checkValidPassportId_valid
+
+                jmp             checkValidPassportId_invalid
+
+checkValidPassportId_valid:
                 inc             rax
 checkValidPassportId_invalid:
-                pop             rdi
                 ret
