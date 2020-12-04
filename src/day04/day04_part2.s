@@ -6,12 +6,15 @@
 .data
 inputsFileName: .asciz          "input.txt"
 fileDescriptor: .quad           4
-fileSize:       .int            20000
+fileSize:       .quad           24000
+
+groupToken:     .asciz          "\n\n"
+passportTokens: .asciz          "byr:", "iyr:", "eyr:", "hgt:", "hcl:", "ecl:", "pid:"
 
 # Local Variables
 .bss
-fileBuffer:     .lcomm          fbuffer, 20000
-lineBuffer:     .lcomm          lbuffer, 64
+fileBuffer:     .lcomm          fbuffer, 24000
+lineBuffer:     .lcomm          lbuffer, 248
 
 # ------------------------------------------------------------- #
 # Main
@@ -34,11 +37,42 @@ _main:
                 call            closefile
 
 # ------------------------------------------------------------- #
-
-                # Get first row
+                # split string by the token "\n\n"
                 lea             rdx, [fileBuffer + RIP]         # buffer to split
+splitLoop:
                 lea             rdi, [lineBuffer + RIP]         # line output buffer
-                call            splitString
+                lea             rsi, [groupToken + RIP]         # pointer to token string
+                call            splitStringToken
+
+                xor             r10, r10
+                lea             r11, [passportTokens + RIP]
+                sub             r11, 5
+passportCheckLoop:
+                inc             r10
+                add             r11, 5
+
+                # scan across the output buffer to find the string token "cid:"
+                lea             rdi, [lineBuffer + RIP]         # line output buffer
+                mov             rsi, r11
+                call            findStringToken
+
+                # check if token is found in string
+                cmp             byte ptr [rdi], 0
+                je              notFound
+
+                cmp             r10, 7
+                jl              passportCheckLoop
+
+                inc             r9
+notFound:
+                # check for terminator, if exists,
+                cmp             byte ptr [rdx], 0
+                jne             splitLoop
+finished:
+
+                # print count
+                mov             rax, r9
+                call            printInteger
 
                 # Exit
                 call            exit
