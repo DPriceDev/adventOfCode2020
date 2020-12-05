@@ -57,7 +57,7 @@ printChar:
 # print a new line to the console
 printNewLine:
                 push            rsi
-                push            10
+                push            '\n'
 
                 mov             rsi, rsp
                 call            printChar

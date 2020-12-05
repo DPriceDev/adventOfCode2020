@@ -1,9 +1,11 @@
 
 .global splitString
+.global splitStringToken
 .global stringToInt
 .global stringLength
 .global findCharacter
 .global findCharacterInRange
+.global findStringToken
 
 # ------------------------------------------------------------- #
 # Get String Length
@@ -27,6 +29,7 @@ stringLength_complete:
 # Split a string by a delimiter
 # lea           rdx, "input string buffer"
 # lea           rdi, "output line buffer"
+# mov           rcx, delimiter i.e. ' '
 # return        output line or 0 for no more lines into rdi
 # return        output last position in the input buffer
 splitString:
@@ -44,7 +47,7 @@ splitString_inputs:
                 cmp             byte ptr [rsi], 0               # end splitting if null char encountered
                 je              splitString_zero
 
-                cmp             byte ptr [rsi], 10              # if not a next line, loop
+                cmp             byte ptr [rsi], cl              # if not a next line, loop
                 jne             splitString_increment
 splitString_zero:
                 mov             byte ptr [rdi], 0
@@ -56,6 +59,67 @@ splitString_zero:
                 pop             rax
 
                 ret
+
+# ------------------------------------------------------------- #
+# split string with a string token
+# lea             rdx, [fileBuffer + RIP]         # buffer to split
+# lea             rdi, [lineBuffer + RIP]
+# lea             rsi, [groupToken + RIP]
+
+# returns line before split in rdx, including the token
+# returns the address after the token in rdx
+checkForStartLoop:
+                # copy value from the file buffer to the line buffer
+                mov             rax, [rdx]
+                mov             [rdi], rax
+
+                # increment file buffer to next char
+                inc             rdx
+                inc             rdi
+
+splitStringToken:
+                # check for terminator
+                cmp             byte ptr [rdx], 0
+                je              finishedSplitting
+
+                # check if the same, if so continue, or loop
+                mov             rax, [rsi]
+                cmp             byte ptr [rdx], al
+                jne             checkForStartLoop
+
+                mov             rbx, rsi                        # save token buffer start address
+checkToken:
+                # save to buffer
+                mov             rax, [rdx]
+                mov             [rdi], rax
+
+                # increment count
+                inc             rdx
+                inc             rdi
+                inc             rsi
+
+                # check file buffer nul reached
+                cmp             byte ptr [rdx], 0
+                je              finishedSplitting
+
+                # check token buffer nul reached
+                cmp             byte ptr [rsi], 0
+                je              finishedSplitting
+
+                # check matches
+                mov             rax, [rsi]
+                cmp             byte ptr [rdx], al
+                je              checkToken
+
+                # not, reset token buffer and return
+                mov             rsi, rbx
+                jmp             checkForStartLoop
+
+finishedSplitting:
+                # add null terminator to output buffer
+                mov             byte ptr [rdi], 0
+                ret
+
 
 # ------------------------------------------------------------- #
 # Convert String to Int
@@ -153,4 +217,49 @@ findCharacter:
                 cmp             byte ptr [rdi], al              # check against lower char range
                 jl              findCharacter_nextChar
 findCharacter_terminator:
+                ret
+
+
+# ------------------------------------------------------------- #
+# find string token in string
+# lea             rdi, [lineBuffer + RIP]         # line output buffer
+# mov             rsi, [token + RIP]              # token
+# returns address of token in rdi, or address of the end of the string
+
+findStringToken_loop:
+                inc             rdi
+findStringToken:
+                # check for terminator
+                cmp             byte ptr [rdi], 0
+                je              findStringToken_finished
+
+                # check if the same, if so continue, or loop
+                mov             rax, [rsi]
+                cmp             byte ptr [rdi], al
+                jne             findStringToken_loop
+
+                mov             rbx, rsi                        # save token buffer start address
+findStringToken_checkToken:
+                # increment count
+                inc             rdi
+                inc             rsi
+
+                # check file buffer nul reached
+                cmp             byte ptr [rdi], 0
+                je              findStringToken_finished
+
+                # check token buffer nul reache
+                cmp             byte ptr [rsi], 0
+                je              findStringToken_finished
+
+                # check matches
+                mov             rax, [rsi]
+                cmp             byte ptr [rdi], al
+                je              findStringToken_checkToken
+
+                # not, reset token buffer and return
+                mov             rsi, rbx
+                jmp             findStringToken_loop
+
+findStringToken_finished:
                 ret
