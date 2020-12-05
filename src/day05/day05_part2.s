@@ -59,8 +59,7 @@ splitLoop:
 
                 /* Compare the current highest to the id, move if higher */
                 cmp             rax, r11                        # compare the id to the running highest
-                jl              splitLoop                       # loop when rax is lower than r11
-                mov             r11, rax                        # or update new highest id
+                cmovg           r11, rax                        # update r11 when id is higher
                 jmp             splitLoop                       # loop back to new input line
 finished:
                 lea             rsi, [idBuffer + RIP]           # move the id list to rsi and
