@@ -70,8 +70,8 @@ splitString_zero:
 # returns the address after the token in rdx
 checkForStartLoop:
                 # copy value from the file buffer to the line buffer
-                mov             rax, [rdx]
-                mov             [rdi], rax
+                mov             al, byte ptr [rdx]
+                mov             byte ptr [rdi], al
 
                 # increment file buffer to next char
                 inc             rdx
@@ -90,8 +90,8 @@ splitStringToken:
                 mov             rbx, rsi                        # save token buffer start address
 checkToken:
                 # save to buffer
-                mov             rax, [rdx]
-                mov             [rdi], rax
+                mov             al, byte ptr [rdx]
+                mov             byte ptr [rdi], al
 
                 # increment count
                 inc             rdx

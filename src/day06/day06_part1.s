@@ -11,7 +11,8 @@ splitToken:     .asciz          "\n\n"
 
 .bss
 fileBuffer:     .lcomm          fbuffer, 24000
-lineBuffer:     .lcomm          lbuffer, 32
+lineBuffer:     .lcomm          lbuffer, 128
+answerBuffer:   .lcomm          abuffer, 26
 
 # ------------------------------------------------------------- #
 # Main
@@ -45,10 +46,14 @@ splitLoop:
                 call            splitStringToken
                 lea             rdi, [lineBuffer + RIP]
 
+                push            rdi
+                push            r11
+                call            countAnswers
+                pop             r11
+                pop             rdi
 
-                /* Todo */
-
-
+                add             r11, rax
+                jmp             splitLoop
 finished:
                 /* finished */
                 mov             rax, r11
@@ -56,3 +61,42 @@ finished:
 
                 /* Exit */
                 call            exit
+
+# ------------------------------------------------------------- #
+countAnswers:
+                xor             rax, rax
+                jmp             countAnswers_start
+countAnswers_increment:
+                inc             rdi
+countAnswers_start:
+                // check for null terminator
+                cmp             byte ptr [rdi], 0
+                je              countAnswers_finished
+
+                // check for new line
+                cmp             byte ptr [rdi], '\n'
+                je              countAnswers_increment
+
+                xor             rax, rax
+                mov             al, byte ptr [rdi]
+                sub             rax, 97
+
+                lea             rbx, [answerBuffer + RIP]
+                add             rbx, rax
+                mov             byte ptr [rbx], 1
+
+                jmp             countAnswers_increment
+countAnswers_finished:
+                lea             rbx, [answerBuffer + RIP]
+                xor             rax, rax
+                xor             rcx, rcx
+countAnswers_count:
+                add             al, byte ptr [rbx]
+                mov             byte ptr [rbx], 0
+                inc             rbx
+                inc             rcx
+
+                cmp             rcx, 26
+                jl              countAnswers_count
+
+                ret

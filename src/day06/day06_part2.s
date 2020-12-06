@@ -48,7 +48,7 @@ splitLoop:
 
                 /* Todo */
 
-
+                jmp             splitLoop
 finished:
                 /* finished */
                 mov             rax, r11
