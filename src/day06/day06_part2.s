@@ -1,6 +1,8 @@
 
 .global _main
 
+.include "macros.s"
+
 # ------------------------------------------------------------- #
 # Variables
 .data
@@ -18,48 +20,25 @@ answerBuffer:   .lcomm          abuffer, 26
 # Main
 .text
 _main:
-                # open the file and save descriptor
-                lea             rdi, [inputsFileName + RIP]     # move address of filename string to rdi
-                call            openfile
-                mov             [fileDescriptor + RIP], rax     # save returned file descriptor
-
-                # read the file to the buffer
-                mov             rax, [syscall_read + RIP]       # set sys call as read
-                mov             rdi, [fileDescriptor + RIP]     # file descriptor
-                lea             rsi, [fileBuffer + RIP]         # pointer to file buffer
-                mov             rdx, [fileSize + RIP]           # number of bytes to read
-                syscall
-
-                # Close a file
-                mov             rdi, [fileDescriptor + RIP]     # file descriptor of the opened file
-                call            closefile
-
+                oftb            [inputsFileName + RIP], [fileBuffer + RIP], [fileSize + RIP]
 # ------------------------------------------------------------- #
-                lea             rdx, [fileBuffer + RIP]         # buffer to split
+                lea             rdx, [fileBuffer + RIP]
                 xor             r11, r11
 splitLoop:
                 cmp             byte ptr [rdx], 0
                 je              finished
 
-                lea             rdi, [lineBuffer + RIP]         # line output buffer
-                lea             rsi, [splitToken + RIP]         # pointer to token string
-                call            splitStringToken
-                lea             rdi, [lineBuffer + RIP]
+                ssbt            [lineBuffer + RIP], [splitToken + RIP]
 
-                push            rdi
                 push            r11
                 call            countAnswers
                 pop             r11
-                pop             rdi
 
                 add             r11, rax
                 jmp             splitLoop
 finished:
-                /* finished */
                 mov             rax, r11
                 call            printInteger
-
-                /* Exit */
                 call            exit
 
 # ------------------------------------------------------------- #
@@ -72,11 +51,8 @@ countAnswers_line:
 countAnswers_increment:
                 inc             rdi
 countAnswers_start:
-                // check for null terminator
                 cmp             byte ptr [rdi], 0
                 je              countAnswers_finished
-
-                // check for new line
                 cmp             byte ptr [rdi], '\n'
                 je              countAnswers_line
 
@@ -105,5 +81,4 @@ countAnswers_countContinue:
 
                 cmp             rcx, 26
                 jl              countAnswers_count
-
                 ret

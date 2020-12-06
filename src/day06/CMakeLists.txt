@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 
 add_executable(day06_part1 day06_part1.s)
 target_link_libraries(day06_part1 apollo)
+target_include_directories(day06_part1 PUBLIC .)
 
 add_custom_command(
         TARGET day06_part1 POST_BUILD
@@ -11,6 +12,7 @@ add_custom_command(
 
 add_executable(day06_part2 day06_part2.s)
 target_link_libraries(day06_part2 apollo)
+target_include_directories(day06_part2 PUBLIC .)
 
 add_custom_command(
         TARGET day06_part2 POST_BUILD
