@@ -80,14 +80,15 @@ checkForStartLoop:
 splitStringToken:
                 # check for terminator
                 cmp             byte ptr [rdx], 0
-                je              finishedSplitting
+                je              splitStringToken_finished
 
                 # check if the same, if so continue, or loop
                 mov             rax, [rsi]
                 cmp             byte ptr [rdx], al
                 jne             checkForStartLoop
 
-                mov             rbx, rsi                        # save token buffer start address
+                mov             rbx, rsi                        # save token buffer start addres
+                mov             rcx, rdi                        # save current token start address
 checkToken:
                 # save to buffer
                 mov             al, byte ptr [rdx]
@@ -100,11 +101,11 @@ checkToken:
 
                 # check file buffer nul reached
                 cmp             byte ptr [rdx], 0
-                je              finishedSplitting
+                je              splitStringToken_finishedNewLine
 
                 # check token buffer nul reached
                 cmp             byte ptr [rsi], 0
-                je              finishedSplitting
+                je              splitStringToken_finishedNewLine
 
                 # check matches
                 mov             rax, [rsi]
@@ -115,9 +116,11 @@ checkToken:
                 mov             rsi, rbx
                 jmp             checkForStartLoop
 
-finishedSplitting:
+splitStringToken_finished:
+                mov             rcx, rdi
+splitStringToken_finishedNewLine:
                 # add null terminator to output buffer
-                mov             byte ptr [rdi], 0
+                mov             byte ptr [rcx], 0
                 ret
 
 
