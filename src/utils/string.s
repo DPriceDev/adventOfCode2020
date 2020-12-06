@@ -47,7 +47,7 @@ splitString_inputs:
                 cmp             byte ptr [rsi], 0               # end splitting if null char encountered
                 je              splitString_zero
 
-                cmp             byte ptr [rsi], cl              # if not a next line, loop
+                cmp             byte ptr [rsi], 10              # if not a next line, loop
                 jne             splitString_increment
 splitString_zero:
                 mov             byte ptr [rdi], 0
