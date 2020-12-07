@@ -70,8 +70,8 @@ splitString_zero:
 # returns the address after the token in rdx
 checkForStartLoop:
                 # copy value from the file buffer to the line buffer
-                mov             rax, [rdx]
-                mov             [rdi], rax
+                mov             al, byte ptr [rdx]
+                mov             byte ptr [rdi], al
 
                 # increment file buffer to next char
                 inc             rdx
@@ -80,18 +80,19 @@ checkForStartLoop:
 splitStringToken:
                 # check for terminator
                 cmp             byte ptr [rdx], 0
-                je              finishedSplitting
+                je              splitStringToken_finished
 
                 # check if the same, if so continue, or loop
                 mov             rax, [rsi]
                 cmp             byte ptr [rdx], al
                 jne             checkForStartLoop
 
-                mov             rbx, rsi                        # save token buffer start address
+                mov             rbx, rsi                        # save token buffer start addres
+                mov             rcx, rdi                        # save current token start address
 checkToken:
                 # save to buffer
-                mov             rax, [rdx]
-                mov             [rdi], rax
+                mov             al, byte ptr [rdx]
+                mov             byte ptr [rdi], al
 
                 # increment count
                 inc             rdx
@@ -100,11 +101,11 @@ checkToken:
 
                 # check file buffer nul reached
                 cmp             byte ptr [rdx], 0
-                je              finishedSplitting
+                je              splitStringToken_finishedNewLine
 
                 # check token buffer nul reached
                 cmp             byte ptr [rsi], 0
-                je              finishedSplitting
+                je              splitStringToken_finishedNewLine
 
                 # check matches
                 mov             rax, [rsi]
@@ -115,9 +116,11 @@ checkToken:
                 mov             rsi, rbx
                 jmp             checkForStartLoop
 
-finishedSplitting:
+splitStringToken_finished:
+                mov             rcx, rdi
+splitStringToken_finishedNewLine:
                 # add null terminator to output buffer
-                mov             byte ptr [rdi], 0
+                mov             byte ptr [rcx], 0
                 ret
 
 
