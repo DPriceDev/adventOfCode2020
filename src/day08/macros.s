@@ -8,6 +8,13 @@
                 lea             rdi, \outputBuffer
 .endm
 
+.macro ssbtr    outputBuffer tokenPointer
+                mov             rdi, \outputBuffer              # line output buffer
+                lea             rsi, \tokenPointer              # pointer to token string
+                call            splitStringToken
+                mov             rdi, rbx
+.endm
+
 # read file to buffer
 .macro rftb     file buffer size
                 mov             rax, [syscall_read + RIP]       # set sys call as read
