@@ -6,7 +6,9 @@ add_subdirectory(day03)
 add_subdirectory(day04)
 add_subdirectory(day05)
 add_subdirectory(day06)
+
 add_subdirectory(day08)
+add_subdirectory(day09)
 
 add_subdirectory(practice)
 add_subdirectory(utils)
