@@ -116,9 +116,12 @@ checkSeats_right:
                 jne             checkSeats_isSeat
 
                 cmp             rbx, 4
-                jl              checkSeats_loop
+                jl              checkSeats_occupied
 
                 mov             byte ptr [rdx], 'L'
+                jmp             checkSeats_loop
+checkSeats_occupied:
+                mov             byte ptr [rdx], '#'
                 jmp             checkSeats_loop
 
 checkSeats_isSeat:
@@ -145,12 +148,13 @@ updatedSeats_start:
                 cmp             byte ptr [rdi], '.'
                 je              updatedSeats_loop
 
-                cmp             byte ptr [rdx], '#'
-                je              updatedSeats_update
-                inc             rax
 updatedSeats_update:
                 mov             bl, byte ptr [rdx]
                 mov             byte ptr [rdi], bl
+
+                cmp             bl, '#'
+                jne             updatedSeats_loop
+                inc             rax
                 jmp             updatedSeats_loop
 updatedSeats_finished:
                 ret
